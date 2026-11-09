@@ -86,6 +86,10 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({
   const [copiedSectionKey, setCopiedSectionKey] = useState<string | null>(null);
   const [copiedFull, setCopiedFull] = useState(false);
 
+  // Download success toast notification
+  const [downloadSuccessMessage, setDownloadSuccessMessage] = useState<string | null>(null);
+  const downloadTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // Active section scroll indicator
   const [activeSectionInView, setActiveSectionInView] = useState<PaperSectionKey>('abstract');
 
@@ -110,6 +114,15 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({
     }
     return () => clearInterval(interval);
   }, [isGenerating]);
+
+  // Cleanup download notification timer on unmount
+  useEffect(() => {
+    return () => {
+      if (downloadTimerRef.current) {
+        clearTimeout(downloadTimerRef.current);
+      }
+    };
+  }, []);
 
   // Clear / Reset form
   const handleResetForm = () => {
@@ -256,7 +269,7 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({
     setTimeout(() => setCopiedSectionKey(null), 2000);
   };
 
-  // Download TXT
+  // Download Research Paper as TXT (.txt)
   const handleDownloadTxt = () => {
     if (!activePaper) return;
     const text = formatAsText(activePaper);
@@ -264,12 +277,20 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${(activePaper.title || 'Research_Paper').slice(0, 32).replace(/[^a-zA-Z0-9]/g, '_')}.txt`;
+    a.download = 'research_paper.txt';
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    setDownloadSuccessMessage('Successfully downloaded research_paper.txt with all 11 sections and headings.');
+    if (downloadTimerRef.current) clearTimeout(downloadTimerRef.current);
+    downloadTimerRef.current = setTimeout(() => {
+      setDownloadSuccessMessage(null);
+    }, 4500);
   };
 
-  // Download JSON
+  // Download Research Paper as JSON (.json)
   const handleDownloadJson = () => {
     if (!activePaper) return;
     const json = formatAsJson(activePaper);
@@ -277,9 +298,17 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${(activePaper.title || 'Research_Paper').slice(0, 32).replace(/[^a-zA-Z0-9]/g, '_')}.json`;
+    a.download = 'research_paper.json';
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    setDownloadSuccessMessage('Successfully downloaded research_paper.json with complete metadata and all 11 sections.');
+    if (downloadTimerRef.current) clearTimeout(downloadTimerRef.current);
+    downloadTimerRef.current = setTimeout(() => {
+      setDownloadSuccessMessage(null);
+    }, 4500);
   };
 
   // Download BibTeX
@@ -588,8 +617,64 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({
               </div>
             </div>
 
-            {/* Action Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Featured Export Buttons */}
+            <div className="p-4 bg-slate-950/70 border border-slate-800 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <div className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <Download className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Export Complete Research Paper (All 11 Sections)</span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Instant browser download with complete structured sections, citations, and metadata.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleDownloadJson}
+                  className="px-4 py-2.5 text-xs font-bold bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white rounded-xl shadow-lg shadow-sky-600/25 border border-sky-400/40 transition-all flex items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0"
+                  aria-label="Download Research Paper as JSON (.json)"
+                >
+                  <Download className="w-4 h-4 text-sky-200" />
+                  <span>Download Research Paper as JSON (.json)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadTxt}
+                  className="px-4 py-2.5 text-xs font-bold bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl shadow-lg shadow-indigo-600/25 border border-indigo-400/40 transition-all flex items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0"
+                  aria-label="Download Research Paper as TXT (.txt)"
+                >
+                  <Download className="w-4 h-4 text-indigo-200" />
+                  <span>Download Research Paper as TXT (.txt)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Download Success Banner */}
+            {downloadSuccessMessage && (
+              <div
+                role="status"
+                className="p-3.5 bg-emerald-950/80 border border-emerald-500/50 rounded-2xl text-emerald-200 text-xs sm:text-sm flex items-center justify-between gap-3 shadow-lg shadow-emerald-950/40 animate-in fade-in"
+              >
+                <div className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="font-medium">{downloadSuccessMessage}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDownloadSuccessMessage(null)}
+                  className="p-1 text-emerald-400 hover:text-emerald-200 rounded-lg hover:bg-emerald-900/50 transition-colors"
+                  aria-label="Dismiss download message"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* Secondary Action Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -607,24 +692,6 @@ export const GeneratorView: React.FC<GeneratorViewProps> = ({
                       <span>Copy Full Paper</span>
                     </>
                   )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDownloadTxt}
-                  className="px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-700/80 transition-all flex items-center gap-1.5"
-                >
-                  <Download className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Download as TXT</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleDownloadJson}
-                  className="px-3.5 py-2 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl border border-slate-700/80 transition-all flex items-center gap-1.5"
-                >
-                  <Download className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Download as JSON</span>
                 </button>
 
                 <button

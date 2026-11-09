@@ -54,14 +54,18 @@ export function formatAsText(paper: ResearchPaper): string {
     '',
   ];
 
+  let sectionIndex = 1;
   for (const section of PAPER_SECTIONS) {
-    if (section.key === 'title') continue; // Title already in header
-
     lines.push('');
-    lines.push(section.label.toUpperCase());
+    lines.push(`SECTION ${sectionIndex}: ${section.label.toUpperCase()}`);
     lines.push(subSeparator);
-    lines.push(paper.sections[section.key] || '[Section not generated]');
+    const sectionContent =
+      section.key === 'title'
+        ? (paper.sections.title || paper.title || paper.topic)
+        : (paper.sections[section.key] || '[Section not generated]');
+    lines.push(sectionContent);
     lines.push('');
+    sectionIndex++;
   }
 
   return lines.join('\n');
